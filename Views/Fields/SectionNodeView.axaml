@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             xmlns:fields="using:AvaloniaApp.Views.Fields"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+             x:Class="AvaloniaApp.Views.Fields.SectionNodeView"
+             x:CompileBindings="False">
+
+  <StackPanel Margin="0,2">
+    <Border BorderBrush="#D4D4D8"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="10"
+            Background="White">
+      <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Row="0" Grid.Column="0"
+                   FontWeight="SemiBold"
+                   Foreground="#EA2C00"
+                   FontSize="13"
+                   VerticalAlignment="Center">
+          <Run Text="Раздел "/>
+          <Run Text="{Binding Section.HierarchyPath, FallbackValue='?'}"/>
+        </TextBlock>
+
+        <Button Grid.Row="0" Grid.Column="1"
+                Content="✕"
+                Padding="8,2"
+                Margin="6,0,0,0"
+                Command="{Binding RemoveCommand}"
+                VerticalAlignment="Center"/>
+
+        <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                 Text="{Binding Section.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 PlaceholderText="Заголовок секции"
+                 FontWeight="SemiBold"
+                 Margin="0,6,0,0"/>
+
+        <TextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                 Text="{Binding Section.Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 MinHeight="80"
+                 PlaceholderText="Содержимое секции в Markdown"
+                 Margin="0,6,0,0"/>
+      </Grid>
+    </Border>
+
+    <Button Content="+ Подраздел"
+            Command="{Binding AddSubsectionCommand}"
+            IsVisible="{Binding CanAddSubsection}"
+            HorizontalAlignment="Left"
+            Margin="20,4,0,0"
+            Padding="10,4"
+            FontSize="12"/>
+
+    <ListBox ItemsSource="{Binding Children}" Margin="20,4,0,0"
+             Background="Transparent"
+             BorderThickness="0"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <fields:SectionNodeView />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </StackPanel>
+</UserControl>

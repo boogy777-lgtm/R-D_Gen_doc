@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             xmlns:fields="using:AvaloniaApp.Views.Fields"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="300"
+             x:Class="AvaloniaApp.Views.Fields.TreeField"
+             x:CompileBindings="False">
+  <Design.DataContext>
+    <!-- Design-time заглушка — реальный SectionsTreeViewModel создаётся в code-behind FormControl. -->
+  </Design.DataContext>
+
+  <StackPanel Spacing="8">
+    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="14"/>
+
+    <Border Background="#FEF9C3"
+            BorderBrush="#FDE047"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="10,6">
+      <TextBlock FontSize="12" Foreground="#854D0E" TextWrapping="Wrap">
+        💡 Иерархия секций: «4», «4.1», «4.1.1». Кнопка «+ Подраздел» создаёт вложенную секцию.
+        При удалении родителя удаляются все подразделы.
+      </TextBlock>
+    </Border>
+
+    <!-- Корневой список — рендерит SectionNodeView для каждого корневого узла.
+         Команды биндятся напрямую к ViewModel узла (vm:SectionNodeViewModel).
+         ListBox + VirtualizingStackPanel масштабируется на >50 элементов. -->
+    <ListBox ItemsSource="{Binding RootNodes}"
+             Background="Transparent"
+             BorderThickness="0"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <fields:SectionNodeView />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Button Content="+ Добавить раздел"
+            Command="{Binding AddRootCommand}"
+            HorizontalAlignment="Left"
+            Padding="12,6"/>
+  </StackPanel>
+</UserControl>

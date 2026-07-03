@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApp.ViewModels"
+        xmlns:models="using:AvaloniaApp.Models"
+        x:Class="AvaloniaApp.Views.NewDocumentDialog"
+        x:DataType="vm:NewDocumentDialogViewModel"
+        Title="Новый документ из шаблона"
+        Width="600" Height="500"
+        WindowStartupLocation="CenterOwner">
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+    <TextBlock Grid.Row="0"
+               Text="Выберите шаблон документа"
+               FontSize="16"
+               FontWeight="Bold"
+               Margin="0,0,0,12"/>
+
+    <ListBox Grid.Row="1"
+             ItemsSource="{Binding AvailableTemplates}"
+             SelectedItem="{Binding SelectedTemplate}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="models:TemplateSummary">
+          <TextBlock Text="{Binding DisplayName}">
+            <ToolTip.Tip>
+              <MultiBinding StringFormat="Шаблон {0} (уровень {1})">
+                <Binding Path="Code"/>
+                <Binding Path="Level"/>
+              </MultiBinding>
+            </ToolTip.Tip>
+          </TextBlock>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <StackPanel Grid.Row="2"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8"
+                Margin="0,12,0,0">
+      <Button Content="OK" Command="{Binding OkCommand}" Padding="20,6"/>
+      <Button Content="Отмена" Command="{Binding CancelCommand}" Padding="20,6"/>
+    </StackPanel>
+  </Grid>
+</Window>

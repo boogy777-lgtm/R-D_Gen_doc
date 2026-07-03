@@ -1,0 +1,94 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             x:Class="AvaloniaApp.Views.DatabaseTab"
+             x:DataType="vm:DatabaseTabViewModel">
+
+  <Design.DataContext>
+    <vm:DatabaseTabViewModel/>
+  </Design.DataContext>
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <!-- Поиск -->
+    <Border Grid.Row="0" Background="#FAFAFA" Padding="8" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0" Text="Поиск:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <TextBox Grid.Column="1"
+                 Text="{Binding SearchText, Mode=TwoWay}"
+                 PlaceholderText="Код или название документа"
+                 IsEnabled="{Binding !IsBusy}"/>
+        <Button Grid.Column="2"
+                Content="Обновить список"
+                Command="{Binding LoadDocumentsCommand}"
+                IsEnabled="{Binding !IsBusy}"
+                Margin="8,0,0,0"
+                Padding="12,6"/>
+      </Grid>
+    </Border>
+
+    <!-- Кнопки действий -->
+    <Border Grid.Row="1" Background="#F0F0F0" Padding="8" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Открыть"
+                Command="{Binding OpenDocumentCommand}"
+                Padding="12,6"/>
+        <Button Content="Экспорт в DOCX"
+                Command="{Binding ExportDocxCommand}"
+                Padding="12,6"/>
+        <Button Content="Удалить"
+                Command="{Binding DeleteDocumentCommand}"
+                Padding="12,6"/>
+      </StackPanel>
+    </Border>
+
+    <!-- Список документов -->
+    <Border Grid.Row="2" Padding="0" BorderBrush="#D0D0D0" BorderThickness="0">
+      <DataGrid ItemsSource="{Binding Documents}"
+                SelectedItem="{Binding SelectedDocument}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                CanUserReorderColumns="True"
+                CanUserResizeColumns="True"
+                CanUserSortColumns="True"
+                GridLinesVisibility="All"
+                DoubleTapped="OnDataGridDoubleTapped">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Код документа"
+                              Binding="{Binding DocId}"
+                              Width="2*"/>
+          <DataGridTextColumn Header="Название"
+                              Binding="{Binding Title}"
+                              Width="3*"/>
+          <DataGridTextColumn Header="Ревизия"
+                              Binding="{Binding Revision}"
+                              Width="Auto"/>
+          <DataGridTextColumn Header="Дата введения"
+                              Binding="{Binding EffectiveDate}"
+                              Width="Auto"/>
+          <DataGridTextColumn Header="Обновлён"
+                              Binding="{Binding UpdatedAt, StringFormat={}{0:g}}"
+                              Width="Auto"/>
+        </DataGrid.Columns>
+        <DataGrid.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Открыть" Command="{Binding OpenDocumentCommand}"/>
+            <MenuItem Header="Экспорт в DOCX" Command="{Binding ExportDocxCommand}"/>
+            <MenuItem Header="Удалить" Command="{Binding DeleteDocumentCommand}"/>
+          </ContextMenu>
+        </DataGrid.ContextMenu>
+      </DataGrid>
+    </Border>
+
+    <!-- Статус-бар вкладки -->
+    <Border Grid.Row="3" Background="#E8E8E8" Padding="8,4" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0" Text="{Binding StatusText}" FontSize="12" Foreground="#333333"/>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding LastUpdatedText, StringFormat='Последнее обновление: {0}'}"
+                   FontSize="12"
+                   Foreground="Gray"
+                   Margin="16,0,0,0"/>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

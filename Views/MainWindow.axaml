@@ -1,0 +1,237 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApp.ViewModels"
+        xmlns:views="using:AvaloniaApp.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:fa="using:FluentAvalonia.UI.Windowing"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="AvaloniaApp.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/Burservis_B.png"
+        Title="Генератор документации"
+        MinWidth="900" MinHeight="600">
+
+  <Design.DataContext>
+    <vm:MainWindowViewModel/>
+  </Design.DataContext>
+
+  <Window.Styles>
+    <Style Selector="fa|FAAppWindow /template/ Border#PART_TitleBar">
+      <Setter Property="Background" Value="#F0F0F0"/>
+    </Style>
+
+    <!-- Убираем голубую подсветку TabItem при наведении/нажатии -->
+    <Style Selector="TabItem:pointerover /template/ Border#PART_HeaderBorder">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="TabItem:pressed /template/ Border#PART_HeaderBorder">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <!-- Убираем подсветку ListBoxItem (Термины, ЛРИ, динамические разделы) -->
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+  </Window.Styles>
+
+  <!--
+    Корневой Panel:
+      • Grid с основным содержимым (тулбар, табы, статус-бар)
+      • overlay-Panel поверх всего: полупрозрачный фон + SuccessOverlay по центру
+    Window (ContentControl) принимает один Content — Panel.
+    Никаких отдельных Window-диалогов — нет рисков NRE от x:Name-полей.
+  -->
+  <Panel>
+
+    <!-- Основное содержимое -->
+    <!--
+      Row layout:
+        Row 0 — TitleBar padding (системная область с кнопками окна)
+        Row 1 — Бренд-полоса: логотип Burservis (слева) + «Генератор документации» (справа)
+        Row 2 — Тулбар (кнопки: Открыть, Экспорт, DOCX, О программе)
+        Row 3 — Бейдж «Последняя редакция»
+        Row 4 — Seed status + Warning area
+        Row 5 — Шапка «Документ»
+        Row 6 — TabControl (вкладки)
+        Row 7 — Статус-бар
+    -->
+    <Grid RowDefinitions="32,36,Auto,Auto,Auto,Auto,*,Auto">
+      <!-- TitleBar padding (пустое место, чтобы не наезжать на системные кнопки) -->
+      <Border Grid.Row="0" Background="#F0F0F0" IsHitTestVisible="False" />
+
+      <!-- Бренд-полоса: логотип + название приложения рядом, слева -->
+      <Border Grid.Row="1" Background="#F0F0F0" Padding="12,0" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="12">
+          <Image Source="avares://AvaloniaApp/Assets/Burservis_logo_cyr_red.png"
+                 Width="160"
+                 Stretch="Uniform"
+                 VerticalAlignment="Center"
+                 ToolTip.Tip="Burservis"/>
+          <TextBlock Text="Генератор документации"
+                     FontSize="14"
+                     FontWeight="Medium"
+                     Foreground="#555555"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Тулбар (только кнопки, без баннера) -->
+      <Border Grid.Row="2" Background="#F0F0F0" Padding="8,4" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button Content="Открыть .md" Command="{Binding OpenFileCommand}" Padding="12,6"/>
+            <Button Content="Сохранить в БД" Command="{Binding SaveToDatabaseCommand}" Padding="12,6"/>
+            <Button Content="Экспорт .md" Command="{Binding ExportMarkdownCommand}" Padding="12,6"/>
+            <Rectangle Width="1" Fill="#D0D0D0" Margin="4,0"/>
+            <Button Content="Экспорт в DOCX" Command="{Binding ExportDocxCommand}" Padding="12,6"/>
+          </StackPanel>
+
+          <StackPanel Grid.Column="1"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center"
+                      Spacing="8"
+                      Margin="20,0,0,0">
+            <Button Content="О программе"
+                    Command="{Binding ShowAboutCommand}"
+                    Padding="10,4"
+                    VerticalAlignment="Center"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Бейдж «Последняя редакция» — отдельная строка между тулбаром и шапкой документа -->
+      <Border Grid.Row="3"
+              Background="#FFF7ED"
+              BorderBrush="#EA2C00"
+              BorderThickness="0,0,0,1"
+              Padding="12,6"
+              Margin="8,4,8,0"
+              CornerRadius="4">
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Spacing="8">
+          <Border Background="#EA2C00"
+                  BorderBrush="#EA2C00"
+                  BorderThickness="1"
+                  CornerRadius="12"
+                  Padding="10,4">
+            <TextBlock Text="Последняя редакция"
+                       FontSize="12"
+                       Foreground="White"
+                       FontWeight="SemiBold"/>
+          </Border>
+          <TextBlock Text="{Binding ChangeLogBadgeText}"
+                     FontSize="13"
+                     Foreground="#EA2C00"
+                     FontWeight="Bold"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Seed status + Warning area -->
+      <StackPanel Grid.Row="4">
+        <Border Background="#FAFAFA" Padding="8,2" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
+          <TextBlock Text="{Binding SeedStatus}" FontSize="11" Foreground="Gray"/>
+        </Border>
+
+        <!-- Предупреждение ЛРИ -->
+        <Border Background="#FEF3C7"
+                BorderBrush="#F59E0B"
+                BorderThickness="0,0,0,1"
+                Padding="8,4"
+                IsVisible="{Binding IsChangeLogWarningVisible}">
+          <TextBlock Text="{Binding ChangeLogWarningText}"
+                     TextWrapping="Wrap"
+                     FontSize="12"
+                     Foreground="#92400E"/>
+        </Border>
+      </StackPanel>
+
+      <!-- Шапка «Документ» — всегда видна над табами -->
+      <Border Grid.Row="5" Background="#FFF0EB" BorderBrush="#FF6E40" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="8,4,8,0">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="2" Orientation="Horizontal">
+            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#EA2C00" VerticalAlignment="Center">
+              <Run Text="Документ "/>
+              <Run Text="№" FontWeight="Normal"/>
+              <Run Text="{Binding Metadata.DocId, FallbackValue='—'}" Foreground="#EA2C00"/>
+            </TextBlock>
+            <TextBlock Text="{Binding Metadata.Title, FallbackValue='Без названия'}"
+                       FontSize="16" Foreground="#7C1800" VerticalAlignment="Center" Margin="16,0,0,0"
+                       MaxWidth="400" TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+          <Button Grid.Column="1"
+                  Content="⟳ Сгенерировать заново"
+                  Padding="8,4"
+                  VerticalAlignment="Center"
+                  Command="{Binding RegenerateDocIdCommand}"/>
+        </Grid>
+      </Border>
+
+      <!-- Табы содержимого -->
+      <TabControl Grid.Row="6" SelectedIndex="{Binding ActiveTabIndex}" x:CompileBindings="False">
+        <TabItem Header="Документ">
+          <views:FormControl DataContext="{Binding FormViewModel}" Margin="0"/>
+        </TabItem>
+
+        <TabItem Header="Настройки">
+          <views:SettingsTab/>
+        </TabItem>
+
+        <TabItem Header="База данных">
+          <views:DatabaseTab DataContext="{Binding DatabaseTabViewModel}"/>
+        </TabItem>
+
+        <TabItem Header="MD Preview">
+          <TextBox Text="{Binding MarkdownPreview, Mode=OneWay}"
+                   IsReadOnly="True"
+                   AcceptsReturn="True"
+                   TextWrapping="Wrap"
+                   FontFamily="Consolas, Courier New, monospace"
+                   FontSize="12"
+                   Margin="8"
+                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                   ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+        </TabItem>
+      </TabControl>
+
+      <!-- Статус-бар -->
+      <Border Grid.Row="7" Background="#E8E8E8" Padding="8,4" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0">
+        <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#333333"/>
+      </Border>
+    </Grid>
+
+    <!--
+      Overlay: Success dialog
+      Показывается, когда в VM.IsSuccessOverlayVisible == true.
+      Полупрозрачный фон + центрированный SuccessOverlay поверх всего UI.
+    -->
+    <Panel IsHitTestVisible="{Binding IsSuccessOverlayVisible}">
+      <Border Background="#80000000"
+              IsVisible="{Binding IsSuccessOverlayVisible}"/>
+      <Border IsVisible="{Binding IsSuccessOverlayVisible}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Background="White"
+              BorderBrush="#D4D4D8"
+              BorderThickness="1"
+              CornerRadius="6"
+              Padding="0"
+              MinWidth="540"
+              MaxWidth="600"
+              BoxShadow="0 8 24 0 #20000000">
+        <views:SuccessOverlay DataContext="{Binding SuccessOverlay}"/>
+      </Border>
+    </Panel>
+
+  </Panel>
+</Window>

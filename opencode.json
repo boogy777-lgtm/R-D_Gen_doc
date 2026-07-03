@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    ".opencode/rules/architecture.md",
+    ".opencode/rules/avalonia-mvvm.md",
+    ".opencode/rules/csharp-style.md",
+    ".opencode/rules/build-gate.md",
+    ".opencode/rules/ux-checklist.md",
+    ".opencode/rules/common-mistakes.md",
+    ".opencode/rules/avalonia-fluent-ui.md",
+    ".opencode/rules/avalonia-ocp-viewmodels.md",
+    ".opencode/rules/avalonia-srp-managers.md",
+    ".opencode/rules/avalonia-markdown.md",
+    ".opencode/rules/avalonia-clean-arch.md"
+  ]
+}

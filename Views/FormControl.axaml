@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             xmlns:fields="using:AvaloniaApp.Views.Fields"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AvaloniaApp.Views.FormControl"
+              x:DataType="vm:FormViewModel">
+  <ScrollViewer>
+    <ItemsControl ItemsSource="{Binding FormFieldViewModels}" Margin="16">
+      <ItemsControl.ItemsPanel>
+        <!-- Обычный StackPanel — без виртуализации. VirtualizingStackPanel в этой форме
+             перебрасывал скролл наверх при добавлении элементов в коллекции (Terms,
+             Sections, Appendices), потому что Avalonia пересчитывает recycled-контейнеры
+             и принудительно вызывает BringIntoView. С <50 полей в документе виртуализация
+             не нужна — пользователь сам управляет скроллом. -->
+        <ItemsPanelTemplate>
+          <StackPanel />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.DataTemplates>
+        <DataTemplate DataType="vm:SingleFieldViewModel">
+          <fields:SingleField />
+        </DataTemplate>
+        <DataTemplate DataType="vm:CollectionFieldViewModel">
+          <fields:CollectionField />
+        </DataTemplate>
+        <DataTemplate DataType="vm:SectionsTreeViewModel">
+          <fields:TreeField />
+        </DataTemplate>
+      </ItemsControl.DataTemplates>
+    </ItemsControl>
+  </ScrollViewer>
+</UserControl>

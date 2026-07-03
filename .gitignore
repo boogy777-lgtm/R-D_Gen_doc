@@ -1,0 +1,16 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+appsettings.json
+*.docx
+smoke_*.docx
+smoke_results.txt
+*.db
+*.db-shm
+*.db-wal
+scripts/dist/
+CI/Output/
+CI/Logs/*.log
+CI/Logs/*.trx

@@ -1,0 +1,351 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             xmlns:models="using:AvaloniaApp.Models"
+             xmlns:fields="using:AvaloniaApp.Views.Fields"
+             xmlns:i="using:Avalonia.Xaml.Interactivity"
+             xmlns:ia="using:Avalonia.Xaml.Interactions.Core"
+             x:Class="AvaloniaApp.Views.SettingsTab"
+             x:DataType="vm:MainWindowViewModel">
+
+  <ScrollViewer>
+    <StackPanel Spacing="20" Margin="16">
+
+      <!-- ============================================================== -->
+      <!--  ФОРМАТ КОДА ДОКУМЕНТА (справочный блок)                        -->
+      <!-- ============================================================== -->
+      <Border Background="#FFF0EB" BorderBrush="#FF6E40" BorderThickness="1"
+              CornerRadius="4" Padding="12">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Формат кода документа" FontSize="14" FontWeight="Bold" Foreground="#EA2C00"/>
+          <TextBlock FontFamily="Consolas" FontSize="13" Foreground="#EA2C00" TextWrapping="Wrap">
+            <Run Text="{} {Тип}-{География}-BUR-{Подразделение}[-{Отдел}][-{Дисциплина}]-{Пор.номер}{Индекс}[-{Язык}]"/>
+          </TextBlock>
+          <TextBlock FontFamily="Consolas" FontSize="12" Foreground="#7C1800">
+            <Run Text="Пример: ST-RUS-BUR-QHSE-401A"/>
+          </TextBlock>
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================================== -->
+      <!--  НАСТРОЙКИ КОДА (опциональные сегменты)                          -->
+      <!-- ============================================================== -->
+      <Border BorderBrush="#D4D4D8" BorderThickness="1" CornerRadius="4" Padding="14">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Настройки кода документа" FontSize="14" FontWeight="Bold" Foreground="#EA2C00"/>
+          <TextBlock Text="Включите опциональные сегменты — они появятся в шифре документа."
+                     TextWrapping="Wrap" Foreground="Gray" FontSize="12"/>
+
+          <!-- Отдел -->
+          <Grid ColumnDefinitions="Auto,Auto,*,180" IsVisible="{Binding Metadata.DivisionEnabled}">
+            <CheckBox Grid.Column="0"
+                      IsChecked="{Binding Metadata.DivisionEnabled, Mode=TwoWay}"
+                      VerticalAlignment="Center" Margin="0,0,12,0">
+              <TextBlock Text="Отдел (функц. направление)" FontSize="13" VerticalAlignment="Center"/>
+            </CheckBox>
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding ChildDepartments}"
+                      SelectedItem="{Binding Metadata.DivisionCode, Mode=TwoWay}"
+                      PlaceholderText="Выбрать из потомков"
+                      MinWidth="140"
+                      Margin="0,0,8,0"
+                      FontFamily="Segoe UI" FontSize="13"
+                      x:CompileBindings="False">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="models:Department">
+                  <TextBlock Text="{Binding DisplayName}"/>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBox Grid.Column="2"
+                     Text="{Binding Metadata.DivisionCode, Mode=TwoWay}"
+                     PlaceholderText="напр. SD-NNB"
+                     MinWidth="120"
+                     FontFamily="Segoe UI" FontSize="13"/>
+            <TextBlock Grid.Column="3" Text="→ п. 4.2.5" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*,180" IsVisible="{Binding !Metadata.DivisionEnabled}">
+            <CheckBox Grid.Column="0"
+                      IsChecked="{Binding Metadata.DivisionEnabled, Mode=TwoWay}"
+                      VerticalAlignment="Center" Margin="0,0,12,0">
+              <TextBlock Text="Отдел (функц. направление)" FontSize="13" VerticalAlignment="Center"/>
+            </CheckBox>
+            <TextBlock Grid.Column="2" Text="→ п. 4.2.5" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+          </Grid>
+
+          <!-- Дисциплина -->
+          <Grid ColumnDefinitions="Auto,*,180">
+            <CheckBox Grid.Column="0"
+                      IsChecked="{Binding Metadata.DisciplineEnabled, Mode=TwoWay}"
+                      VerticalAlignment="Center" Margin="0,0,12,0">
+              <TextBlock Text="Дисциплина (группа документов по тематике)" FontSize="13" VerticalAlignment="Center"/>
+            </CheckBox>
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding DisciplineCodes}"
+                      SelectedValue="{Binding Metadata.DisciplineCode, Mode=TwoWay}"
+                      DisplayMemberBinding="{Binding Label}"
+                      SelectedValueBinding="{Binding Code}"
+                      IsVisible="{Binding Metadata.DisciplineEnabled}"
+                      HorizontalAlignment="Stretch"
+                      FontFamily="Segoe UI" FontSize="13"
+                      x:CompileBindings="False"/>
+            <TextBlock Grid.Column="2" Text="→ п. 4.2.6" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+          </Grid>
+
+          <!-- Индекс -->
+          <Grid ColumnDefinitions="Auto,*,180">
+            <CheckBox Grid.Column="0"
+                      IsChecked="{Binding Metadata.IndexEnabled, Mode=TwoWay}"
+                      VerticalAlignment="Center" Margin="0,0,12,0">
+              <TextBlock Text="Индекс (дальнейшая разбивка нумерации)" FontSize="13" VerticalAlignment="Center"/>
+            </CheckBox>
+            <TextBox Grid.Column="1"
+                     Text="{Binding Metadata.IndexCode, Mode=TwoWay}"
+                     IsVisible="{Binding Metadata.IndexEnabled}"
+                     PlaceholderText="напр. A или A-1"
+                     FontFamily="Segoe UI" FontSize="13"/>
+            <TextBlock Grid.Column="2" Text="→ п. 4.2.8" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+          </Grid>
+
+          <!-- Язык -->
+          <Grid ColumnDefinitions="Auto,*,180">
+            <CheckBox Grid.Column="0"
+                      IsChecked="{Binding Metadata.LanguageEnabled, Mode=TwoWay}"
+                      VerticalAlignment="Center" Margin="0,0,12,0">
+              <TextBlock Text="Язык (для иноязычных документов)" FontSize="13" VerticalAlignment="Center"/>
+            </CheckBox>
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding LanguageCodes}"
+                      SelectedValue="{Binding Metadata.LanguageCode, Mode=TwoWay}"
+                      DisplayMemberBinding="{Binding Label}"
+                      SelectedValueBinding="{Binding Code}"
+                      IsVisible="{Binding Metadata.LanguageEnabled}"
+                      HorizontalAlignment="Stretch"
+                      FontFamily="Segoe UI" FontSize="13"
+                      x:CompileBindings="False"/>
+            <TextBlock Grid.Column="2" Text="→ п. 4.2.9" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================================== -->
+      <!--  ГРУППА A: ВЕРХНИЙ КОЛОНТИТУЛ                                    -->
+      <!-- ============================================================== -->
+      <Border BorderBrush="#D4D4D8" BorderThickness="1" CornerRadius="4" Padding="14">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Верхний колонтитул" FontSize="14" FontWeight="Bold" Foreground="#EA2C00"/>
+
+           <Grid ColumnDefinitions="180,*,180" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+            <!-- Row 0: Title -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Наименование документа" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="0" Grid.Column="1"
+                       Text="{Binding Metadata.Title, Mode=TwoWay}"
+                       PlaceholderText="Полное название документа"
+                       FontFamily="Segoe UI" FontSize="13"/>
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="→ Header / YAML: title" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+            <!-- Row 1: DocId -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Номер документа" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="1" Grid.Column="1"
+                       Text="{Binding Metadata.DocId, Mode=TwoWay}"
+                       PlaceholderText="например: ST-RUS-BUR-QHSE-001"
+                       Margin="0,8,0,0"
+                       FontFamily="Segoe UI" FontSize="13">
+              <i:Interaction.Behaviors>
+                <ia:EventTriggerBehavior EventName="GotFocus">
+                  <ia:InvokeCommandAction Command="{Binding MarkDocIdAsManuallyEditedCommand}" />
+                </ia:EventTriggerBehavior>
+              </i:Interaction.Behaviors>
+            </TextBox>
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="→ Header / YAML: doc_id" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+              <!-- Row 2: DocType — ComboBox + TextBox (drop-down + редактируемое название). 
+                   DisplayName формата (CODE) Название — из модели DocType. -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Тип документа" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,180" Margin="0,8,0,0">
+              <ComboBox  Grid.Column="0"
+                         ItemsSource="{Binding DocTypes}"
+                         SelectedItem="{Binding SelectedDocType, Mode=TwoWay}"
+                         ToolTip.Tip="{Binding SelectedDocType.Description}"
+                         ToolTip.ShowDelay="2000"
+                         PlaceholderText="Выберите тип из справочника"
+                         HorizontalAlignment="Stretch"
+                         FontFamily="Segoe UI" FontSize="13"
+                         x:CompileBindings="False">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate DataType="models:DocType">
+                    <TextBlock Text="{Binding DisplayName}"/>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <TextBox Grid.Column="1" Margin="6,0,0,0"
+                       Text="{Binding Metadata.DocType, Mode=TwoWay}"
+                       PlaceholderText="код"
+                       FontFamily="Segoe UI" FontSize="13"/>
+            </Grid>
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="→ YAML: doc_type" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <!-- Row 3: Department — ComboBox (из справочника) + TextBox (полное название) -->
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Имя подразделения (шифр)" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,180" Margin="0,8,0,0">
+              <ComboBox  Grid.Column="0"
+                         ItemsSource="{Binding Departments}"
+                         SelectedValueBinding="{Binding Code}"
+                         SelectedValue="{Binding DepartmentCode, Mode=TwoWay}"
+                         PlaceholderText="Выберите подразделение из справочника"
+                         HorizontalAlignment="Stretch"
+                         FontFamily="Segoe UI" FontSize="13"
+                         x:CompileBindings="False">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate DataType="models:Department">
+                    <TextBlock Text="{Binding DisplayName}"/>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <TextBox Grid.Column="1" Margin="6,0,0,0"
+                       Text="{Binding Metadata.DepartmentName, Mode=TwoWay}"
+                       PlaceholderText="Полное название подразделения"
+                       FontFamily="Segoe UI" FontSize="13"/>
+            </Grid>
+            <TextBlock Grid.Row="3" Grid.Column="2" Text="→ YAML: department" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <!-- Row 4: Approver -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Утверждающий" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="4" Grid.Column="1"
+                       Text="{Binding Metadata.Approver, Mode=TwoWay}"
+                       PlaceholderText="ФИО утверждающего"
+                       Margin="0,8,0,0"
+                       FontFamily="Segoe UI" FontSize="13"/>
+            <TextBlock Grid.Row="4" Grid.Column="2" Text="→ Header / YAML: approver" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <!-- Row 5: EffectiveDate -->
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Дата ред." VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="5" Grid.Column="1"
+                       Text="{Binding Metadata.EffectiveDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                       PlaceholderText="ДД.ММ.ГГГГ"
+                       Margin="0,8,0,0"
+                       FontFamily="Segoe UI" FontSize="13"/>
+            <TextBlock Grid.Row="5" Grid.Column="2" Text="→ Header / YAML: effective_date" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <!-- Row 6: Revision (только номер редакции) -->
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="Номер ред." VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="6" Grid.Column="1"
+                       Text="{Binding Metadata.Revision, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                       PlaceholderText="например: 0"
+                       Margin="0,8,0,0"
+                       FontFamily="Segoe UI" FontSize="13"/>
+            <TextBlock Grid.Row="6" Grid.Column="2" Text="→ Header / ЛРИ / YAML: revision" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <!-- Row 7: Status -->
+            <TextBlock Grid.Row="7" Grid.Column="0" Text="Статус" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <ComboBox  Grid.Row="7" Grid.Column="1"
+                       ItemsSource="{Binding Statuses}"
+                       SelectedItem="{Binding Metadata.Status, Mode=TwoWay}"
+                       PlaceholderText="проект / утверждён / архив / в пересмотре / отменён"
+                       Margin="0,8,0,0"
+                       HorizontalAlignment="Stretch"
+                       FontFamily="Segoe UI" FontSize="13"
+                       x:CompileBindings="False"/>
+            <TextBlock Grid.Row="7" Grid.Column="2" Text="→ YAML: status" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+             <!-- Row 8: удалена — Модальность удалена из схемы метаданных -->
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================================== -->
+      <!--  ГРУППА B: ТАБЛИЦА ПОСЛЕ КОЛОНТИТУЛА (ApprovalTable)            -->
+      <!-- ============================================================== -->
+      <Border BorderBrush="#D4D4D8" BorderThickness="1" CornerRadius="4" Padding="14">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Таблица после колонтитула" FontSize="14" FontWeight="Bold" Foreground="#EA2C00"/>
+
+          <Grid ColumnDefinitions="180,*,180" RowDefinitions="Auto,Auto,Auto,Auto">
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Роль утверждающего" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <ComboBox  Grid.Row="0" Grid.Column="1"
+                       ItemsSource="{Binding ApproverRoles}"
+                       SelectedItem="{Binding Metadata.ApproverRole, Mode=TwoWay}"
+                       PlaceholderText="Выберите роль из справочника"
+                       HorizontalAlignment="Stretch"
+                       x:CompileBindings="False"/>
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="→ ApprovalTable / YAML: approver_role" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="ФИО утверждающего" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="1" Grid.Column="1"
+                       Text="{Binding Metadata.Approver, Mode=TwoWay}"
+                       PlaceholderText="ФИО утверждающего"
+                       Margin="0,8,0,0"/>
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="→ ApprovalTable / YAML: approver" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Дата" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="2" Grid.Column="1"
+                       Text="{Binding Metadata.DateApproved, Mode=TwoWay}"
+                       PlaceholderText="ДД.ММ.ГГГГ"
+                       Margin="0,8,0,0"/>
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="→ ApprovalTable / YAML: effective_date" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="№ протокола" VerticalAlignment="Center" Margin="0,8,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Row="3" Grid.Column="1"
+                       Text="{Binding Metadata.Protocol, Mode=TwoWay}"
+                       PlaceholderText="например: PR-2026-042"
+                       Margin="0,8,0,0"/>
+            <TextBlock Grid.Row="3" Grid.Column="2" Text="→ ApprovalTable / YAML: protocol (опц.)" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,8,0,0"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================================== -->
+      <!--  ГРУППА C: НИЖНИЙ КОЛОНТИТУЛ (редактируемый)                    -->
+      <!-- ============================================================== -->
+      <Border BorderBrush="#D4D4D8" BorderThickness="1" CornerRadius="4" Padding="14">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Нижний колонтитул" FontSize="14" FontWeight="Bold" Foreground="#EA2C00"/>
+          <TextBlock Text="Текст нижнего колонтитула DOCX. По умолчанию — формулировка по ГОСТ 6.1-6.2."
+                     TextWrapping="Wrap" Foreground="Gray" FontSize="12"/>
+
+          <Grid ColumnDefinitions="180,*,180">
+            <TextBlock Grid.Column="0" Text="Текст footer" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#7C1800" FontWeight="SemiBold"/>
+            <TextBox   Grid.Column="1"
+                       Text="{Binding Metadata.FooterText, Mode=TwoWay}"
+                       PlaceholderText="Печатные версии этого документа считаются НЕКОНТРОЛИРУЕМЫМИ"
+                       AcceptsReturn="True"
+                       TextWrapping="Wrap"
+                       MinHeight="40"/>
+            <TextBlock Grid.Column="2" Text="→ Footer / YAML: footer_text" FontSize="11" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================================== -->
+      <!--  ГРУППА D: ЛИСТ РЕГИСТРАЦИИ ИЗМЕНЕНИЙ (ЛРИ)                    -->
+      <!-- ============================================================== -->
+      <Border BorderBrush="#D4D4D8" BorderThickness="1" CornerRadius="4" Padding="14">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Лист регистрации изменений" FontSize="14" FontWeight="Bold" Foreground="#EA2C00"/>
+
+          <StackPanel Spacing="6">
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="12">
+              <Run Text="1. Нажмите «+ Добавить» — новая строка получит текущую дату и автоматически увеличенный номер редакции." />
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="12">
+              <Run Text="2. Заполните «Разработал», «Проверил» и «Краткое описание изменений» (используйте шаблон в поле)." />
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="12">
+              <Run Text="3. Автор, указанный в последней строке, автоматически считается автором текущей редакции документа." />
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="12">
+              <Run Text="4. Исторические строки (кроме последней) автоматически блокируются — их нельзя отредактировать, чтобы сохранить историю." />
+            </TextBlock>
+          </StackPanel>
+
+           <!-- Редактор ЛРИ прямо на вкладке Настройки.
+                Теперь это тот же универсальный CollectionField, что и в основной форме. -->
+          <fields:CollectionField DataContext="{Binding ChangeLogFieldViewModel}" x:CompileBindings="False"/>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             x:Class="AvaloniaApp.Views.SuccessOverlay"
+             x:DataType="vm:SuccessOverlayViewModel"
+             Background="Transparent">
+
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+        Margin="20"
+        MinWidth="520"
+        MaxWidth="560">
+
+    <!-- Заголовок -->
+    <TextBlock Grid.Row="0"
+               Text="{Binding Title}"
+               FontSize="16"
+               FontWeight="Bold"
+               Margin="0,0,0,8"/>
+
+    <!-- Сообщение -->
+    <TextBlock Grid.Row="1"
+               Text="{Binding Message}"
+               TextWrapping="Wrap"
+               Margin="0,0,0,16"/>
+
+    <!-- Полный путь (моноширинный, выделяемый) -->
+    <Border Grid.Row="2"
+            Background="#F4F4F5"
+            BorderBrush="#D4D4D8"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="10,8"
+            Margin="0,0,0,12">
+      <SelectableTextBlock Text="{Binding FilePath}"
+                           FontFamily="Consolas, Courier New, monospace"
+                           TextWrapping="Wrap"
+                           Foreground="#1F2937"/>
+    </Border>
+
+    <!-- Кнопки -->
+    <StackPanel Grid.Row="3"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8">
+      <Button Content="Скопировать путь"
+              Padding="14,6"
+              Command="{Binding CopyCommand}"/>
+      <Button Content="Открыть в проводнике"
+              Padding="14,6"
+              IsVisible="{Binding OfferOpenInExplorer}"
+              Command="{Binding OpenInExplorerCommand}"/>
+      <Button Content="ОК"
+              Padding="20,6"
+              IsDefault="True"
+              Command="{Binding OkCommand}"/>
+    </StackPanel>
+  </Grid>
+</UserControl>

@@ -1,0 +1,598 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AvaloniaApp.App"
+             xmlns:local="using:AvaloniaApp"
+             xmlns:models="using:AvaloniaApp.Models"
+             xmlns:fields="using:AvaloniaApp.Views.Fields"
+             xmlns:sty="using:FluentAvalonia.Styling"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+
+        <!-- Пара «термин — определение» -->
+        <DataTemplate DataType="models:TermPair" x:CompileBindings="False">
+            <Grid ColumnDefinitions="*,*,Auto" Margin="0,2">
+                <TextBox Grid.Column="0"
+                         Text="{Binding Term, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="Термин"/>
+                <TextBox Grid.Column="1"
+                         Text="{Binding Definition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="Определение"
+                         Margin="4,0,0,0"/>
+                <Button Grid.Column="2" Content="×"
+                        Command="{Binding $parent[UserControl].DataContext.RemoveCommand}"
+                        CommandParameter="{Binding}"
+                        Margin="4,0,0,0" Padding="8,2"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Строка Листа регистрации изменений -->
+        <DataTemplate DataType="models:ChangeLogRow" x:CompileBindings="False">
+            <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="6" Margin="0,2">
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="120,80,140,140,*,Auto">
+                    <!-- Колонки-подсказки над полями ввода -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Дата ред."
+                               FontSize="10" Foreground="#9CA3AF" Margin="2,0,0,2"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Номер ред."
+                               FontSize="10" Foreground="#9CA3AF" Margin="2,0,0,2"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Разработал"
+                               FontSize="10" Foreground="#9CA3AF" Margin="2,0,0,2"/>
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Проверил"
+                               FontSize="10" Foreground="#9CA3AF" Margin="2,0,0,2"/>
+                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Краткое описание изменений"
+                               FontSize="10" Foreground="#9CA3AF" Margin="2,0,0,2"/>
+
+                    <!-- Поля ввода -->
+                    <TextBox Grid.Row="1" Grid.Column="0"
+                             Text="{Binding Date, Mode=OneWay}"
+                             IsReadOnly="True"
+                             Background="#F5F5F5"
+                             Margin="2"/>
+                    <TextBox Grid.Row="1" Grid.Column="1"
+                             Text="{Binding Revision, Mode=OneWay}"
+                             IsReadOnly="True"
+                             Background="#F5F5F5"
+                             Margin="2"/>
+                    <TextBox Grid.Row="1" Grid.Column="2"
+                             Text="{Binding Author, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="Разработал"
+                             Margin="2">
+                        <TextBox.IsReadOnly>
+                            <MultiBinding Converter="{x:Static fields:FieldConverters.BooleanOr}">
+                                <Binding Path="IsReadOnly"/>
+                                <Binding Path="DataContext.IsReadOnly" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                            </MultiBinding>
+                        </TextBox.IsReadOnly>
+                    </TextBox>
+                    <TextBox Grid.Row="1" Grid.Column="3"
+                             Text="{Binding Reviewer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="Проверил"
+                             Margin="2">
+                        <TextBox.IsReadOnly>
+                            <MultiBinding Converter="{x:Static fields:FieldConverters.BooleanOr}">
+                                <Binding Path="IsReadOnly"/>
+                                <Binding Path="DataContext.IsReadOnly" RelativeSource="{RelativeSource AncestorType=fields:CollectionField}"/>
+                            </MultiBinding>
+                        </TextBox.IsReadOnly>
+                    </TextBox>
+                    <TextBox Grid.Row="1" Grid.Column="4"
+                             Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="60"
+                             PlaceholderText="[Раздел/пункт]: ___
+[Что изменено]: ___
+[Почему изменено]: ___
+[Основание]: ___"
+                             Margin="2">
+                        <TextBox.IsReadOnly>
+                            <MultiBinding Converter="{x:Static fields:FieldConverters.BooleanOr}">
+                                <Binding Path="IsReadOnly"/>
+                                <Binding Path="DataContext.IsReadOnly" RelativeSource="{RelativeSource AncestorType=fields:CollectionField}"/>
+                            </MultiBinding>
+                        </TextBox.IsReadOnly>
+                    </TextBox>
+                    <Button Grid.Row="1" Grid.Column="5" Content="×"
+                            Command="{Binding $parent[UserControl].DataContext.RemoveCommand}"
+                            CommandParameter="{Binding}"
+                            Margin="4,0,0,0" Padding="8,2"
+                            VerticalAlignment="Top">
+                        <Button.IsVisible>
+                            <MultiBinding Converter="{x:Static fields:FieldConverters.BooleanAnd}">
+                                <Binding Path="IsReadOnly" Converter="{x:Static fields:FieldConverters.BooleanNot}"/>
+                                <Binding Path="DataContext.IsEditable" RelativeSource="{RelativeSource AncestorType=fields:CollectionField}"/>
+                            </MultiBinding>
+                        </Button.IsVisible>
+                    </Button>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Связанный документ -->
+        <DataTemplate DataType="models:StringItem" x:CompileBindings="False">
+            <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                <TextBox Grid.Column="0"
+                         Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="ST-RUS-BUR-QHSE-0601"/>
+                <Button Grid.Column="1" Content="×"
+                        Command="{Binding $parent[UserControl].DataContext.RemoveCommand}"
+                        CommandParameter="{Binding}"
+                        Margin="4,0,0,0" Padding="8,2"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Приложение -->
+        <DataTemplate DataType="models:BodyAppendix" x:CompileBindings="False">
+            <Border BorderBrush="#FFB59A"
+                    BorderThickness="1"
+                    Background="#FFF0EB"
+                    CornerRadius="4"
+                    Padding="10"
+                    Margin="0,4">
+                <StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   FontWeight="SemiBold"
+                                   Foreground="#EA2C00"
+                                   FontSize="13"
+                                   VerticalAlignment="Center">
+                            <Run Text="Приложение "/>
+                            <Run Text="{Binding Position}"/>
+                        </TextBlock>
+
+                        <Button Grid.Column="1"
+                                Content="✕"
+                                Padding="8,2"
+                                Margin="6,0,0,0"
+                                Command="{Binding $parent[UserControl].DataContext.RemoveCommand}"
+                                CommandParameter="{Binding}"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <TextBox Margin="0,6,0,0"
+                             Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="Подзаголовок приложения (опционально, например «Карта процесса»)"/>
+
+                    <TextBox Margin="0,6,0,0"
+                             Text="{Binding Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="120"
+                             IsVisible="{Binding Sections.Count, Converter={x:Static fields:FieldConverters.CountEqualsZeroToTrue}}"
+                             PlaceholderText="Содержимое приложения (Markdown)"/>
+
+                    <ListBox x:CompileBindings="False" ItemsSource="{Binding Sections}" Margin="0,6,0,0"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="models:BodySection" x:CompileBindings="False">
+                                <Border BorderBrush="#FFB59A"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8"
+                                        Background="#FFF0EB"
+                                        Margin="0,2">
+                                    <StackPanel>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Grid.Column="0"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#7C1800"
+                                                       FontSize="12"
+                                                       Margin="0,0,0,4">
+                                                <Run Text="Таблица "/>
+                                                <Run Text="{Binding GlobalTableIndex, Mode=OneWay}"/>
+                                            </TextBlock>
+
+                                            <Button Grid.Column="1"
+                                                    Content="✕"
+                                                    Padding="6,2"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding $parent[UserControl].DataContext.RemoveSubItemCommand}"
+                                                    VerticalAlignment="Center">
+                                                <Button.CommandParameter>
+                                                    <MultiBinding Converter="{x:Static fields:FieldConverters.ParentChild}">
+                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=ItemsControl}"/>
+                                                        <Binding Path="."/>
+                                                    </MultiBinding>
+                                                </Button.CommandParameter>
+                                            </Button>
+                                        </Grid>
+
+                                        <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 PlaceholderText="Название таблицы (например: «Матрица RACI»)"
+                                                 Margin="0,0,0,4"/>
+
+                                        <TextBox Text="{Binding Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 MinHeight="80"
+                                                 PlaceholderText="Содержимое таблицы в Markdown"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Кнопка добавления новой таблицы в приложение -->
+                    <Button Content="+ Добавить таблицу"
+                            Margin="0,6,0,0"
+                            Padding="8,4"
+                            Command="{Binding $parent[UserControl].DataContext.AddSubItemCommand}"
+                            CommandParameter="{Binding}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <sty:FluentAvaloniaTheme CustomAccentColor="#EA2C00"/>
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+
+        <!-- ================================================================
+             Баг #1: убираем серую заливку при клике/выделении/фокусе.
+             Глобальные стили — покрывают TextBox, ComboBox, AutoCompleteBox,
+             ListBoxItem, TabItem. FluentTheme рисует голубую/серую подсветку
+             через SelectionBrush / Background pseudo-классов :pointerover,
+             :pressed, :selected, :focus. Делаем её прозрачной там, где она
+             даёт «грязный» серый прямоугольник поверх фирменного Burservis UI.
+             ================================================================ -->
+
+        <!-- SelectionBrush: подсвечиваем выделенный текст фирменным Burservis-красным.
+             UX-аудит #5 (после FluentAvalonia-миграции): ранее здесь стоял
+             "Transparent" — выделение было невидимым. Меняем на полупрозрачный
+             красный (#33EA2C00) — пользователь видит, что выделил.
+
+             Этот стиль также покрывает ComboBox и AutoCompleteBox: их
+             шаблоны FluentTheme используют внутренний TextBox
+             (PART_TextBox / InnerPresenter), который наследует селектор
+             TextBox и подхватывает значение. Отдельные <Style Selector="ComboBox">
+             не нужны — у самих ComboBox/AutoCompleteBox нет свойства
+             SelectionBrush, и XAML-компилятор Avalonia выдаёт AVLN2000.
+             SelectionForegroundBrush — белый для контраста на красном фоне. -->
+        <Style Selector="TextBox">
+            <Setter Property="SelectionBrush" Value="#33EA2C00"/>
+            <Setter Property="SelectionForegroundBrush" Value="White"/>
+        </Style>
+
+        <!-- ListBoxItem: серый фон при :pointerover / :selected.
+             Шаблон FluentTheme использует ContentPresenter внутри item-а;
+             если установить прозрачный фон — «грязный» прямоугольник исчезает,
+             а фирменный акцент (красный TabItem pipe, рамка Border) остаётся. -->
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBoxItem:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </Application.Styles>
+
+    <!--
+        ================================================================
+        BRAND ACCENT OVERRIDE (Burservis PANTONE 1665 C / 1815 C)
+        ================================================================
+        Переопределяем системные кисти FluentTheme, чтобы дефолтный голубой
+        Avalonia accent стал фирменным красным Burservis.
+        Покрывает: Button, ToggleButton, CheckBox, RadioButton, Slider,
+        ProgressBar, ScrollBar, TabControl, ComboBox, FocusAdorner.
+        ================================================================
+    -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+
+                <!-- ============ LIGHT THEME ============ -->
+                <ResourceDictionary x:Key="Light">
+
+                    <!-- Базовый акцент -->
+                    <Color x:Key="SystemAccentColor">#EA2C00</Color>
+                    <Color x:Key="SystemAccentColorDark1">#CC2400</Color>
+                    <Color x:Key="SystemAccentColorDark2">#A31D00</Color>
+                    <Color x:Key="SystemAccentColorDark3">#7C1800</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FF4D1A</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FF6E40</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FFB59A</Color>
+
+                    <!-- SolidBrush-обёртки (FluentTheme ожидает именно их) -->
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentRevealBorderBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentRevealBackgroundBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemAccentBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushDark1" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushDark2" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushLight1" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushLight2" Color="#FF6E40"/>
+
+                    <!-- FocusVisual — фирменный красный -->
+                    <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="#7C1800"/>
+                    <SolidColorBrush x:Key="FocusAdornerPrimaryBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="FocusAdornerSecondaryBrush" Color="#7C1800"/>
+
+                    <!-- Активные/выбранные элементы списков и табов -->
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentLowBrush" Color="#33EA2C00"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentMediumBrush" Color="#66EA2C00"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentHighBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemControlSelectedHighLightAccentBrush" Color="#EA2C00"/>
+
+                    <!-- Кнопки и переключатели -->
+                    <SolidColorBrush x:Key="AccentButtonBackground" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="AccentButtonForeground" Color="White"/>
+                    <SolidColorBrush x:Key="AccentButtonBorderBrush" Color="#EA2C00"/>
+
+                    <!-- CheckBox (FluentTheme — замена дефолтного голубого на фирменный красный) -->
+                    <SolidColorBrush x:Key="CheckBoxForegroundUnchecked" Color="#202020"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUnchecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUnchecked" Color="#7C1800"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUnchecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUnchecked" Color="#7C1800"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUnchecked" Color="#EA2C00"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedPointerOver" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUncheckedPointerOver" Color="#FFF0EB"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUncheckedPointerOver" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPointerOver" Color="#FFF0EB"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUncheckedPointerOver" Color="#EA2C00"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUncheckedPressed" Color="#FFD4C2"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUncheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPressed" Color="#FFD4C2"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUncheckedPressed" Color="#A31D00"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedDisabled" Color="#9CA3AF"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUncheckedDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUncheckedDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUncheckedDisabled" Color="#E0E0E0"/>
+
+                    <!-- Checked states.
+                         CheckBoxBackgroundChecked* намеренно Transparent, чтобы фон
+                         контрола не заливался красным — закрашивается только сам
+                         квадратик через CheckBoxCheckBackgroundFillChecked. -->
+                    <SolidColorBrush x:Key="CheckBoxForegroundChecked" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundChecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushChecked" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="White"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundCheckedPointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundCheckedPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushCheckedPointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="White"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundCheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundCheckedPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushCheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="White"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundCheckedDisabled" Color="#9CA3AF"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundCheckedDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushCheckedDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedDisabled" Color="White"/>
+
+                    <!-- Indeterminate states (фон — Transparent; визуальный акцент только на квадратике). -->
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminate" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminate" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminate" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminate" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminate" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminate" Color="White"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminatePointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminatePointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminatePointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminatePointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminatePointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminatePointerOver" Color="White"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminatePressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminatePressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminatePressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminatePressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminatePressed" Color="#A31D00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminatePressed" Color="White"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminateDisabled" Color="#9CA3AF"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminateDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminateDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminateDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminateDisabled" Color="#E0E0E0"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminateDisabled" Color="White"/>
+
+                    <!-- TabControl/TabItem (FluentTheme — индикатор и текст вкладок в фирменный красный) -->
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselected" Color="#7C1800"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselected" Color="Transparent"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPointerOver" Color="#FFF0EB"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselectedPointerOver" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPressed" Color="#FFD4C2"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselectedPressed" Color="#A31D00"/>
+
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelected" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelected" Color="#FFF0EB"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPointerOver" Color="#FFF0EB"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPointerOver" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPressed" Color="#FFD4C2"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPressed" Color="#A31D00"/>
+
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundDisabled" Color="#9CA3AF"/>
+
+                    <!-- Индикатор (pipe) под выбранной вкладкой — фирменный красный -->
+                    <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill" Color="#EA2C00"/>
+                </ResourceDictionary>
+
+                <!-- ============ DARK THEME ============ -->
+                <ResourceDictionary x:Key="Dark">
+
+                    <Color x:Key="SystemAccentColor">#FF4D1A</Color>
+                    <Color x:Key="SystemAccentColorDark1">#EA2C00</Color>
+                    <Color x:Key="SystemAccentColorDark2">#CC2400</Color>
+                    <Color x:Key="SystemAccentColorDark3">#7C1800</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FF6E40</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FFB59A</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FFD4C2</Color>
+
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentRevealBorderBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentRevealBackgroundBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemAccentBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushDark1" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushDark2" Color="#CC2400"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushLight1" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="SystemAccentBrushLight2" Color="#FFB59A"/>
+
+                    <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="FocusAdornerPrimaryBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="FocusAdornerSecondaryBrush" Color="#EA2C00"/>
+
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentLowBrush" Color="#33FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentMediumBrush" Color="#66FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentHighBrush" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="SystemControlSelectedHighLightAccentBrush" Color="#FF4D1A"/>
+
+                    <SolidColorBrush x:Key="AccentButtonBackground" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="AccentButtonForeground" Color="White"/>
+                    <SolidColorBrush x:Key="AccentButtonBorderBrush" Color="#FF4D1A"/>
+
+                    <!-- CheckBox (Dark theme) -->
+                    <SolidColorBrush x:Key="CheckBoxForegroundUnchecked" Color="#F5F5F5"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUnchecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUnchecked" Color="#FFB59A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUnchecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUnchecked" Color="#FFB59A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUnchecked" Color="#FF4D1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUncheckedPointerOver" Color="#33FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUncheckedPointerOver" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPointerOver" Color="#33FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUncheckedPointerOver" Color="#FF6E40"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUncheckedPressed" Color="#66FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUncheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPressed" Color="#66FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUncheckedPressed" Color="#EA2C00"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedDisabled" Color="#6B6B6B"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundUncheckedDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushUncheckedDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundUncheckedDisabled" Color="#3A3A3A"/>
+
+                    <!-- Checked states (Dark). Фон — Transparent; только квадратик красный. -->
+                    <SolidColorBrush x:Key="CheckBoxForegroundChecked" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundChecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushChecked" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="#1A1A1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundCheckedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundCheckedPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushCheckedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="#1A1A1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundCheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundCheckedPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushCheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="#1A1A1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundCheckedDisabled" Color="#6B6B6B"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundCheckedDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushCheckedDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedDisabled" Color="#1A1A1A"/>
+
+                    <!-- Indeterminate states (Dark) -->
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminate" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminate" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminate" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminate" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminate" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminate" Color="#1A1A1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminatePointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminatePointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminatePointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminatePointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminatePointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminatePointerOver" Color="#1A1A1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminatePressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminatePressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminatePressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminatePressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminatePressed" Color="#EA2C00"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminatePressed" Color="#1A1A1A"/>
+
+                    <SolidColorBrush x:Key="CheckBoxForegroundIndeterminateDisabled" Color="#6B6B6B"/>
+                    <SolidColorBrush x:Key="CheckBoxBackgroundIndeterminateDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="CheckBoxBorderBrushIndeterminateDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminateDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminateDisabled" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminateDisabled" Color="#1A1A1A"/>
+
+                    <!-- TabControl/TabItem (Dark theme) -->
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselected" Color="#FFB59A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselected" Color="Transparent"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPointerOver" Color="#33FF4D1A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselectedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPressed" Color="#66FF4D1A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselectedPressed" Color="#EA2C00"/>
+
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelected" Color="#FF4D1A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelected" Color="#33FF4D1A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPointerOver" Color="#33FF4D1A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPointerOver" Color="#FF6E40"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPressed" Color="#66FF4D1A"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPressed" Color="#EA2C00"/>
+
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundDisabled" Color="Transparent"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundDisabled" Color="#6B6B6B"/>
+
+                    <!-- Индикатор (pipe) под выбранной вкладкой — фирменный красный -->
+                    <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill" Color="#FF4D1A"/>
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

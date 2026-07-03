@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+             x:Class="AvaloniaApp.Views.Fields.CollectionField"
+             x:DataType="vm:CollectionFieldViewModel">
+  <StackPanel Spacing="4">
+    <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
+    <TextBlock Text="{Binding HelpText}"
+               TextWrapping="Wrap"
+               Foreground="#6B7280"
+               FontSize="12"
+               IsVisible="{Binding HasHelpText}"/>
+    <ListBox x:CompileBindings="False" ItemsSource="{Binding ItemsSource}"
+             Background="Transparent"
+             BorderThickness="0"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ItemsPanel>
+        <!-- Обычный StackPanel — без виртуализации, чтобы при добавлении элементов в коллекцию
+             не сбрасывался скролл родительского ScrollViewer. Списки в формах документа
+             содержат единицы/десятки строк — производительность не страдает. -->
+        <ItemsPanelTemplate>
+          <StackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+    </ListBox>
+    <Button Content="+ Добавить" Command="{Binding AddCommand}" HorizontalAlignment="Left"
+            IsVisible="{Binding IsEditable}"/>
+  </StackPanel>
+</UserControl>

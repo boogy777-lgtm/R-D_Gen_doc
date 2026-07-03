@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             xmlns:fields="using:AvaloniaApp.Views.Fields"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="120"
+             x:Class="AvaloniaApp.Views.Fields.SingleField"
+             x:DataType="vm:SingleFieldViewModel">
+  <Design.DataContext>
+    <vm:SingleFieldViewModel/>
+  </Design.DataContext>
+  <StackPanel Spacing="4">
+    <StackPanel Orientation="Horizontal" Spacing="4">
+      <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="#7C1800"/>
+      <TextBlock Text="*" Foreground="Red" IsVisible="{Binding IsRequired}"/>
+    </StackPanel>
+    <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+             AcceptsReturn="{Binding IsMultiline}"
+             TextWrapping="{Binding IsMultiline, Converter={x:Static fields:FieldConverters.BooleanToTextWrapping}}"
+             MinHeight="{Binding IsMultiline, Converter={x:Static fields:FieldConverters.BooleanToMinHeight}}"
+             PlaceholderText="{Binding Placeholder}"/>
+  </StackPanel>
+</UserControl>

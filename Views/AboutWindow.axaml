@@ -1,0 +1,108 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApp.ViewModels"
+        x:Class="AvaloniaApp.Views.AboutWindow"
+        x:DataType="vm:AboutViewModel"
+        Title="О программе"
+        Width="420"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+  <Design.DataContext>
+    <vm:AboutViewModel/>
+  </Design.DataContext>
+
+  <Border Background="White"
+          BorderBrush="#D4D4D8"
+          BorderThickness="1"
+          CornerRadius="8"
+          Padding="24"
+          Margin="0">
+
+    <StackPanel Spacing="12" HorizontalAlignment="Center">
+
+      <!-- Полноразмерный баннер компании (Burservis) -->
+      <Image Source="avares://AvaloniaApp/Assets/Burservis_logo_cyr_red.png"
+             Width="200"
+             Stretch="Uniform"
+             HorizontalAlignment="Center"
+             ToolTip.Tip="Burservis"/>
+
+      <!-- Название приложения -->
+      <TextBlock Text="{Binding AppName}"
+                 FontSize="20"
+                 FontWeight="Bold"
+                 Foreground="#EA2C00"
+                 HorizontalAlignment="Center"/>
+
+      <!-- Версия -->
+      <StackPanel Orientation="Horizontal"
+                  HorizontalAlignment="Center"
+                  Spacing="8">
+        <Border Background="#FFF0EB"
+                BorderBrush="#FF6E40"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="10,4"
+                HorizontalAlignment="Center">
+          <TextBlock Text="{Binding VersionText}"
+                     FontSize="12"
+                     Foreground="#EA2C00"
+                     FontWeight="SemiBold"/>
+        </Border>
+      </StackPanel>
+
+      <!-- Автор -->
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+        <TextBlock Text="Автор:" Foreground="#6B7280" FontSize="13"/>
+        <TextBlock Text="{Binding Author}" Foreground="#111827" FontSize="13" FontWeight="SemiBold"/>
+      </StackPanel>
+
+      <!-- Ссылка на сайт -->
+      <Button HorizontalAlignment="Center"
+              Padding="0"
+              Background="Transparent"
+              BorderThickness="0"
+              Command="{Binding OpenCompanyLinkCommand}">
+        <TextBlock Text="{Binding CompanyLinkText}"
+                   Foreground="#EA2C00"
+                   TextDecorations="Underline"
+                   FontSize="13"
+                   Cursor="Hand"/>
+      </Button>
+
+      <!-- Разделитель -->
+      <Rectangle Height="1" Fill="#E5E7EB" Margin="0,4"/>
+
+      <!-- Powered by Obsidian -->
+      <Button HorizontalAlignment="Center"
+              Padding="4,2"
+              Background="Transparent"
+              BorderThickness="0"
+              Command="{Binding OpenObsidianLinkCommand}"
+              Cursor="Hand">
+        <StackPanel Orientation="Horizontal" Spacing="8"
+                    ToolTip.Tip="Obsidian — мощный инструмент для ведения заметок и базы знаний">
+          <Image Source="avares://AvaloniaApp/Assets/obsidian-icon.ico"
+                 Width="20"
+                 Height="20"
+                 Stretch="Uniform"
+                 VerticalAlignment="Center"/>
+          <TextBlock Text="Powered by Obsidian"
+                     FontSize="12"
+                     Foreground="#6B7280"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+      </Button>
+
+      <!-- Кнопка ОК -->
+      <Button Content="ОК"
+              HorizontalAlignment="Center"
+              Padding="28,6"
+              IsDefault="True"
+              Command="{Binding OkCommand}"/>
+
+    </StackPanel>
+  </Border>
+</Window>
