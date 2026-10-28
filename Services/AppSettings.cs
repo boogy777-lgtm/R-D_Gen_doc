@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -25,11 +24,6 @@ public static class AppSettings
         try
         {
             var settingsPath = Path.Combine(exeDir, "appsettings.json");
-
-            if (!File.Exists(settingsPath))
-            {
-                settingsPath = Path.Combine(exeDir, "appsettings.json");
-            }
 
             if (!File.Exists(settingsPath))
             {
