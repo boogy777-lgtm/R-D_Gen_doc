@@ -1,97 +1,88 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    CI release pipeline: restore → build → test → publish standalone → package.
+    Restore, build, test, publish and package a clean Windows release.
 .DESCRIPTION
-    AvaloniaApp CI. Produces self-contained win-x64 single-file exe.
-    Test results → CI\Logs\test-results.trx
-    Build log    → CI\Logs\build.log
-    Output       → CI\Output\AvaloniaApp.zip
+    Compile and test the portable solution before restoring only the app for
+    the publish RID. No --no-build/--no-restore assumptions across RIDs.
+    Returns a non-zero exit code on any failed command.
 #>
 param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
-    [string]$OutputDir = "$PSScriptRoot\Output",
-    [string]$LogDir = "$PSScriptRoot\Logs",
+    [string]$OutputDir = (Join-Path $PSScriptRoot "Output"),
+    [string]$LogDir = (Join-Path $PSScriptRoot "Logs"),
     [switch]$SkipTests
 )
 
 $ErrorActionPreference = "Stop"
-$solutionRoot = Resolve-Path "$PSScriptRoot\.."
-$solutionFile = "$solutionRoot\AvaloniaApp.slnx"
-$projectFile = "$solutionRoot\AvaloniaApp.csproj"
-$testProject  = "$solutionRoot\AvaloniaApp.Tests\AvaloniaApp.Tests.csproj"
-$timestamp    = Get-Date -Format "yyyy-MM-dd_HHmmss"
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$solution = Join-Path $root "AvaloniaApp.slnx"
+$app = Join-Path $root "AvaloniaApp.csproj"
+$tests = Join-Path $root "AvaloniaApp.Tests/AvaloniaApp.Tests.csproj"
+$publishDir = Join-Path $OutputDir "publish"
+$zipName = "R-D_Gen_doc-$Configuration-$Runtime.zip"
+$zipPath = Join-Path $OutputDir $zipName
+$logPath = Join-Path $LogDir "build.log"
 
-# ── Init ──────────────────────────────────────────────
 New-Item -ItemType Directory -Force -Path $OutputDir, $LogDir | Out-Null
-$buildLog = "$LogDir\build-$timestamp.log"
-$testLog  = "$LogDir\test-results-$timestamp.trx"
+if (Test-Path $publishDir) { Remove-Item -LiteralPath $publishDir -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+if (Test-Path $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
+if (Test-Path "$zipPath.sha256") { Remove-Item -LiteralPath "$zipPath.sha256" -Force }
+Set-Content -Path $logPath -Value "R-D Gen Doc release build" -Encoding utf8
 
-function Write-Step($msg) {
-    $line = "── $msg ──"
-    Write-Host $line -ForegroundColor Cyan
-    Add-Content -Path $buildLog -Value $line
+function Invoke-DotNet {
+    param([string]$Step, [string[]]$Arguments)
+    Write-Host "==> $Step" -ForegroundColor Cyan
+    & dotnet @Arguments 2>&1 | Tee-Object -FilePath $logPath -Append
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Step failed (exit code $LASTEXITCODE)"
+    }
 }
 
-function Write-Result($ok, $msg) {
-    $color = if ($ok) { "Green" } else { "Red" }
-    $text  = if ($ok) { "[OK]  $msg" } else { "[FAIL] $msg" }
-    Write-Host $text -ForegroundColor $color
-    Add-Content -Path $buildLog -Value $text
+try {
+    Invoke-DotNet "Restore solution" @("restore", $solution)
+    Invoke-DotNet "Build solution" @("build", $solution, "-c", $Configuration, "--no-restore")
+
+    if (-not $SkipTests) {
+        Invoke-DotNet "Run tests" @(
+            "test", $tests, "-c", $Configuration, "--no-build", "--no-restore",
+            "--results-directory", $LogDir, "--logger", "trx;LogFileName=test-results.trx"
+        )
+    }
+
+    # RID-specific restore and build happen here. Do not reuse the portable build
+    # outputs with --no-build; a self-contained RID publish needs its own assets.
+    Invoke-DotNet "Publish standalone" @(
+        "publish", $app, "-c", $Configuration, "-r", $Runtime,
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:PublishReadyToRun=false",
+        "-p:IncludeNativeLibrariesForSelfExtract=true",
+        "-p:IncludeAllContentForSelfExtract=false",
+        "-p:DebugType=none",
+        "-p:DebugSymbols=false",
+        "-o", $publishDir
+    )
+
+    $exePath = Join-Path $publishDir "AvaloniaApp.exe"
+    if (-not (Test-Path -LiteralPath $exePath)) {
+        throw "Publish did not produce AvaloniaApp.exe"
+    }
+
+    # Ship sample configuration, never developer secrets or local databases.
+    Copy-Item (Join-Path $root "appsettings.example.json") -Destination $publishDir
+    Copy-Item (Join-Path $root "appsettings.README.md") -Destination $publishDir
+
+    Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zipPath -Force
+    $hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    Set-Content -Path "$zipPath.sha256" -Value "$hash  $zipName" -Encoding utf8NoBOM
+
+    Write-Host "[OK] Package: $zipPath" -ForegroundColor Green
+    Write-Host "[OK] SHA256: $hash" -ForegroundColor Green
 }
-
-$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-
-# ── 1. Restore ────────────────────────────────────────
-Write-Step "1/4: dotnet restore"
-dotnet restore $solutionFile --runtime $Runtime 2>&1 | Tee-Object -FilePath $buildLog -Append
-if ($LASTEXITCODE -ne 0) { Write-Result $false "restore"; exit 1 }
-Write-Result $true "restore"
-
-# ── 2. Build ──────────────────────────────────────────
-Write-Step "2/4: dotnet build"
-dotnet build $solutionFile -c $Configuration --no-restore 2>&1 | Tee-Object -FilePath $buildLog -Append
-if ($LASTEXITCODE -ne 0) { Write-Result $false "build"; exit 1 }
-Write-Result $true "build"
-
-# ── 3. Test ───────────────────────────────────────────
-if (-not $SkipTests) {
-    Write-Step "3/4: dotnet test"
-    dotnet test $testProject -c $Configuration --no-build --logger "trx;LogFileName=$testLog" 2>&1 | Tee-Object -FilePath $buildLog -Append
-    if ($LASTEXITCODE -ne 0) { Write-Result $false "test"; exit 1 }
-    Write-Result $true "test"
-} else {
-    Write-Step "3/4: SKIP tests (--SkipTests)"
+catch {
+    Write-Error $_
+    exit 1
 }
-
-# ── 4. Publish standalone ────────────────────────────
-Write-Step "4/4: dotnet publish (standalone single-file)"
-$publishDir = "$OutputDir\publish"
-dotnet publish $projectFile -c $Configuration -r $Runtime --no-restore --no-build --self-contained -o $publishDir 2>&1 | Tee-Object -FilePath $buildLog -Append
-if ($LASTEXITCODE -ne 0) { Write-Result $false "publish"; exit 1 }
-Write-Result $true "publish"
-
-# ── Package ───────────────────────────────────────────
-$zipName = "AvaloniaApp-$Configuration-$Runtime-$timestamp.zip"
-$zipPath = "$OutputDir\$zipName"
-Write-Step "Package: $zipName"
-Compress-Archive -Path "$publishDir\*" -DestinationPath $zipPath -Force
-Write-Result $true "package → $zipPath"
-
-# ── Summary ──────────────────────────────────────────
-$stopwatch.Stop()
-$summary = @"
-========================================
-AvaloniaApp CI — Build Summary
-========================================
-Timestamp : $timestamp
-Config    : $Configuration
-Runtime   : $Runtime
-Duration  : $($stopwatch.Elapsed.ToString('mm\:ss'))
-Artifact  : $zipName
-Tests     : $(if ($SkipTests) {'SKIPPED'} else {$testLog})
-========================================
-"@
-Add-Content -Path $buildLog -Value $summary
-Write-Host "`n$summary" -ForegroundColor Green
