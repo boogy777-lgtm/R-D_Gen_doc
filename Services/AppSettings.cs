@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Text.Json;
 
 namespace AvaloniaApp.Services;
@@ -13,10 +12,10 @@ public static class AppSettings
 {
     static AppSettings()
     {
-        // В single-file режиме AppContext.BaseDirectory = temp dir.
-        // Используем путь к реальному .exe, чтобы БД лежала рядом с бинарником.
-        var exeDir = Path.GetDirectoryName(Environment.ProcessPath!)
-                     ?? AppContext.BaseDirectory;
+        // .NET single-file: AppContext.BaseDirectory указывает на каталог
+        // исполняемого файла (и при обычном dotnet run — на output приложения).
+        // Assembly.Location для встроенных сборок пустой (IL3000).
+        var exeDir = AppContext.BaseDirectory;
 
         var fallbackDraftsDb = $"Data Source={Path.Combine(exeDir, "template.db")}";
         var fallbackFactoryRoot = Path.Combine(exeDir, "docs", "_шаблоны");
@@ -25,13 +24,8 @@ public static class AppSettings
 
         try
         {
-            var assemblyPath = Assembly.GetExecutingAssembly().Location;
-            var baseDir = string.IsNullOrWhiteSpace(assemblyPath)
-                ? exeDir
-                : Path.GetDirectoryName(assemblyPath)!;
-            var settingsPath = Path.Combine(baseDir, "appsettings.json");
+            var settingsPath = Path.Combine(exeDir, "appsettings.json");
 
-            // В single-file режиме assembly.Location пуст — ищем рядом с .exe.
             if (!File.Exists(settingsPath))
             {
                 settingsPath = Path.Combine(exeDir, "appsettings.json");
